@@ -11,6 +11,7 @@ from app.config import Settings, get_settings
 from app.database import Database, InvestigationRepository
 from app.schemas import AnalysisReport, AnalyzeRequest, InvestigationSummary, StatsResponse
 from app.service import AnalysisService
+from app.web import dashboard
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -35,6 +36,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(status_code=422, content={"detail":str(exc)})
 
     DatabaseSession = Annotated[Session, Depends(db_session)]
+
+    @app.get("/", include_in_schema=False)
+    def web_dashboard():
+        return dashboard()
 
     @app.get("/health")
     def health(session: DatabaseSession):

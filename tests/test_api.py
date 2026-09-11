@@ -12,3 +12,11 @@ def test_health_and_validation(tmp_path):
         assert response.status_code==422
         assert client.get("/api/investigations/999").status_code==404
 
+
+def test_public_dashboard(tmp_path):
+    app=create_app(Settings(database_url=f"sqlite:///{tmp_path/'test.db'}"))
+    with TestClient(app) as client:
+        response=client.get("/")
+        assert response.status_code==200
+        assert "Investigate indicators" in response.text
+        assert 'aria-label="Indicator of compromise"' in response.text

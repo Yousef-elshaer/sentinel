@@ -2,6 +2,8 @@
 
 **Defensive threat-intelligence and IOC triage in one explainable report.**
 
+The deployed FastAPI service includes a responsive browser dashboard at `/` and interactive OpenAPI documentation at `/docs`.
+
 Sentinel accepts an IP address, domain, URL, file hash, or CVE; identifies its type; queries relevant intelligence providers; normalizes their results; calculates a transparent 0–100 risk score; and stores the investigation. One unavailable provider never fails the complete analysis.
 
 ## Highlights
@@ -83,6 +85,10 @@ docker compose up --build
 ```
 
 API: `http://localhost:8000/docs` · Dashboard: `http://localhost:8501`
+
+## Deploy to Render
+
+The included `render.yaml` creates one free Python web service. Connect this repository as a Render Blueprint and deploy it; Render serves the browser dashboard and API from the same public URL. Add optional provider keys as secret environment variables in Render.
 
 ## Limitations
 
