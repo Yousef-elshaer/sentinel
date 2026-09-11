@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    env_file: [.env]
+    volumes: ["sentinel-data:/app/data"]
+    environment:
+      DATABASE_URL: sqlite:////app/data/sentinel.db
+  dashboard:
+    build: .
+    command: streamlit run dashboard/main.py --server.address=0.0.0.0 --server.port=8501
+    ports: ["8501:8501"]
+    environment:
+      API_BASE_URL: http://api:8000
+    depends_on: [api]
+volumes:
+  sentinel-data:
+
