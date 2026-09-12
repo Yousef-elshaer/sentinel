@@ -26,3 +26,22 @@ def test_provider_failure_does_not_break_analysis(tmp_path):
     with TestClient(create_app(settings)) as client:
         report=client.post("/api/analyze",json={"ioc":"CVE-2024-12345"})
         assert report.status_code==201 and report.json()["provider_results"][0]["status"]=="unavailable"
+
+
+@respx.mock
+def test_degraded_provider_result_uses_short_cache(tmp_path):
+    url = "https://example.test/kev.json"
+    route = respx.get(url).mock(return_value=Response(503))
+    settings = Settings(
+        database_url=f"sqlite:///{tmp_path/'test.db'}",
+        cisa_kev_url=url,
+        cache_ttl_seconds=3600,
+        degraded_cache_ttl_seconds=0,
+    )
+    with TestClient(create_app(settings)) as client:
+        first = client.post("/api/analyze", json={"ioc": "CVE-2024-12345"}).json()
+        second = client.post("/api/analyze", json={"ioc": "CVE-2024-12345"}).json()
+
+    assert first["cached"] is False
+    assert second["cached"] is False
+    assert route.call_count == 2

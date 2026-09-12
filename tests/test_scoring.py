@@ -16,3 +16,10 @@ def test_no_signal_is_low():
     score,verdict,reasons=calculate_risk([ProviderResult(provider="x",status=ProviderStatus.SUCCESS,malicious=False)])
     assert (score,verdict)==(0,"LOW") and reasons[0].startswith("+0")
 
+
+def test_limited_coverage_warns_without_changing_low_verdict():
+    results = [ProviderResult(provider="working", status=ProviderStatus.SUCCESS, malicious=False),
+               ProviderResult(provider="limited", status=ProviderStatus.RATE_LIMITED)]
+    score, verdict, reasons = calculate_risk(results)
+    assert (score, verdict) == (0, "LOW")
+    assert any("score does not confirm" in reason for reason in reasons)

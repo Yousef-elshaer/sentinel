@@ -68,16 +68,28 @@ async def test_abuseipdb_maps_confidence_and_reports():
 
 @pytest.mark.asyncio
 async def test_urlhaus_reports_no_match_as_clean():
-    async with client_for(
-        lambda _: httpx.Response(200, json={"query_status": "no_results"})
-    ) as client:
-        result = await URLhaus(client, Settings()).safe_lookup(
+    def handler(request):
+        assert request.headers["Auth-Key"] == "urlhaus-key"
+        return httpx.Response(200, json={"query_status": "no_results"})
+
+    async with client_for(handler) as client:
+        result = await URLhaus(client, Settings(urlhaus_auth_key="urlhaus-key")).safe_lookup(
             classify_ioc("https://example.com/path")
         )
 
     assert result.status == ProviderStatus.SUCCESS
     assert result.malicious is False
     assert result.confidence == 0
+
+
+@pytest.mark.asyncio
+async def test_missing_urlhaus_key_skips_lookup():
+    async with client_for(lambda _: pytest.fail("No request should be sent")) as client:
+        result = await URLhaus(client, Settings()).safe_lookup(
+            classify_ioc("https://example.com/path")
+        )
+
+    assert result.status == ProviderStatus.SKIPPED
 
 
 @pytest.mark.asyncio
