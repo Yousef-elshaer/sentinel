@@ -17,3 +17,5 @@ services:
         value: sqlite:////tmp/sentinel.db
       - key: PROVIDER_TIMEOUT_SECONDS
         value: 15
+      - key: DEGRADED_CACHE_TTL_SECONDS
+        value: 60

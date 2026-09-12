@@ -56,7 +56,10 @@ curl -X POST http://localhost:8000/api/analyze \
 
 ## Configuration
 
-Copy `.env.example` to `.env`. Add `VIRUSTOTAL_API_KEY` and `ABUSEIPDB_API_KEY` for those providers. URLhaus and CISA KEV use public endpoints. Never commit `.env`.
+Copy `.env.example` to `.env`. Add `VIRUSTOTAL_API_KEY`, `ABUSEIPDB_API_KEY`, and
+`URLHAUS_AUTH_KEY` for those providers. CISA KEV uses a public endpoint. Never commit `.env`.
+Normal reports are cached for an hour by default; reports with skipped or failed provider checks
+use a short one-minute cache so temporary rate limits and outages recover quickly.
 
 ## Architecture
 
