@@ -90,10 +90,6 @@ API: `http://localhost:8000/docs` · Dashboard: `http://localhost:8501`
 
 The included `render.yaml` creates one free Python web service. Connect this repository as a Render Blueprint and deploy it; Render serves the browser dashboard and API from the same public URL. Add optional provider keys as secret environment variables in Render.
 
-## Missing and partial intelligence
-
-When every applicable provider is skipped or fails, Sentinel returns `risk_score: null` and `verdict: "UNKNOWN"`. Both dashboards display an unavailable score and **Insufficient data**, rather than LOW / 0. Cached reports and investigation history receive the same interpretation. Successful checks with no malicious findings still receive LOW / 0; this is not a guarantee of safety. If only some checks succeed, the explanation flags partial coverage.
-
 ## Limitations
 
 - Free provider tiers impose quotas and may return incomplete intelligence.

@@ -1,4 +1,3 @@
-from collections import Counter
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
@@ -7,7 +6,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 
 from app.config import Settings
 from app.schemas import AnalysisReport, InvestigationSummary, IOCType, ProviderResult, StatsResponse
-from app.scoring import calculate_risk
 
 
 class Base(DeclarativeBase):
@@ -41,23 +39,20 @@ class Database:
 
 
 def to_report(row: Investigation, cached: bool = False) -> AnalysisReport:
-    results = [ProviderResult.model_validate(item) for item in row.provider_results]
-    score, verdict, explanations = calculate_risk(results)
     return AnalysisReport(
-        id=row.id, ioc=row.ioc, ioc_type=IOCType(row.ioc_type), risk_score=score,
-        verdict=verdict, created_at=row.created_at,
-        provider_results=results,
-        risk_explanations=explanations, cached=cached,
+        id=row.id, ioc=row.ioc, ioc_type=IOCType(row.ioc_type), risk_score=row.risk_score,
+        verdict=row.verdict, created_at=row.created_at,
+        provider_results=[ProviderResult.model_validate(item) for item in row.provider_results],
+        risk_explanations=row.risk_explanations, cached=cached,
     )
 
 
 class InvestigationRepository:
     def __init__(self, session: Session): self.session = session
 
-    def save(self, ioc: str, ioc_type: IOCType, score: int | None, verdict: str,
+    def save(self, ioc: str, ioc_type: IOCType, score: int, verdict: str,
              results: list[ProviderResult], explanations: list[str]) -> AnalysisReport:
-        # Keep compatibility with existing NOT NULL database columns; reports expose null.
-        row = Investigation(ioc=ioc, ioc_type=ioc_type.value, risk_score=score if score is not None else 0, verdict=verdict,
+        row = Investigation(ioc=ioc, ioc_type=ioc_type.value, risk_score=score, verdict=verdict,
                             provider_results=[r.model_dump(mode="json") for r in results],
                             risk_explanations=explanations)
         self.session.add(row); self.session.commit(); self.session.refresh(row)
@@ -77,10 +72,10 @@ class InvestigationRepository:
     def list(self, limit: int, offset: int) -> list[InvestigationSummary]:
         rows = self.session.scalars(select(Investigation).order_by(
             Investigation.created_at.desc()).limit(limit).offset(offset)).all()
-        return [InvestigationSummary.model_validate(to_report(row)) for row in rows]
+        return [InvestigationSummary.model_validate(row) for row in rows]
 
     def stats(self) -> StatsResponse:
         total = self.session.scalar(select(func.count()).select_from(Investigation)) or 0
-        verdicts = dict(Counter(to_report(row).verdict for row in self.session.scalars(select(Investigation))))
+        verdicts = dict(self.session.execute(select(Investigation.verdict, func.count()).group_by(Investigation.verdict)).all())
         types = dict(self.session.execute(select(Investigation.ioc_type, func.count()).group_by(Investigation.ioc_type)).all())
         return StatsResponse(total_investigations=total, verdict_counts=verdicts, type_counts=types)

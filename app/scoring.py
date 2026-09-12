@@ -8,14 +8,8 @@ def verdict_for(score: int) -> str:
     return "LOW"
 
 
-def calculate_risk(results: list[ProviderResult]) -> tuple[int | None, str, list[str]]:
+def calculate_risk(results: list[ProviderResult]) -> tuple[int, str, list[str]]:
     successful = [r for r in results if r.status == ProviderStatus.SUCCESS]
-    if not successful:
-        return None, "UNKNOWN", [
-            ("Insufficient data: no intelligence provider completed a check successfully. "
-            "Missing API keys, rate limits, or provider failures may prevent assessment. "
-            "This is not evidence that the indicator is safe.")
-        ]
     flagged = [r for r in successful if r.malicious]
     points: list[tuple[int, str]] = []
     if flagged:
@@ -35,7 +29,5 @@ def calculate_risk(results: list[ProviderResult]) -> tuple[int | None, str, list
     explanations = [f"+{value}: {reason}" for value, reason in points]
     if not explanations:
         explanations = ["+0: No provider returned a positive malicious signal"]
-    if len(successful) < len(results):
-        explanations.append("Partial coverage: some provider checks were unavailable; the score uses available evidence only.")
     return score, verdict_for(score), explanations
 
