@@ -61,10 +61,14 @@ class AbuseIPDB(Provider):
 class URLhaus(Provider):
     name="URLhaus"; supported_types: ClassVar[set[IOCType]]={IOCType.URL,IOCType.DOMAIN,IOCType.MD5,IOCType.SHA256}
     async def lookup(self,ioc:ClassifiedIOC)->ProviderResult:
+        if not self.settings.urlhaus_auth_key:
+            return ProviderResult(provider=self.name,status=ProviderStatus.SKIPPED,error="Auth-Key not configured")
         if ioc.type==IOCType.URL: endpoint,payload="url",{"url":ioc.value}
         elif ioc.type==IOCType.DOMAIN: endpoint,payload="host",{"host":ioc.value}
         else: endpoint,payload="payload",{"hash":ioc.value}
-        response=await self.client.post(f"{self.settings.urlhaus_base_url}/{endpoint}/",data=payload); response.raise_for_status(); data=response.json()
+        response=await self.client.post(f"{self.settings.urlhaus_base_url}/{endpoint}/",data=payload,
+                                        headers={"Auth-Key":self.settings.urlhaus_auth_key})
+        response.raise_for_status(); data=response.json()
         found=data.get("query_status") not in {"no_results","invalid_url","invalid_host","hash_not_found"}
         return ProviderResult(provider=self.name,status=ProviderStatus.SUCCESS,malicious=found,confidence=85 if found else 0,
             malicious_detections=1 if found else 0,categories=[str(data.get("threat","malware_distribution"))] if found else [],evidence={"query_status":data.get("query_status")})

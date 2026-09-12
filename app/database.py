@@ -5,7 +5,14 @@ from sqlalchemy import JSON, DateTime, Integer, String, create_engine, func, sel
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from app.config import Settings
-from app.schemas import AnalysisReport, InvestigationSummary, IOCType, ProviderResult, StatsResponse
+from app.schemas import (
+    AnalysisReport,
+    InvestigationSummary,
+    IOCType,
+    ProviderResult,
+    ProviderStatus,
+    StatsResponse,
+)
 
 
 class Base(DeclarativeBase):
@@ -62,12 +69,23 @@ class InvestigationRepository:
         row = self.session.get(Investigation, investigation_id)
         return to_report(row) if row else None
 
-    def recent(self, ioc: str, ttl_seconds: int) -> AnalysisReport | None:
+    def recent(self, ioc: str, ttl_seconds: int,
+               degraded_ttl_seconds: int | None = None) -> AnalysisReport | None:
         cutoff = datetime.now(UTC) - timedelta(seconds=ttl_seconds)
         row = self.session.scalar(select(Investigation).where(
             Investigation.ioc == ioc, Investigation.created_at >= cutoff
         ).order_by(Investigation.created_at.desc()).limit(1))
-        return to_report(row, cached=True) if row else None
+        if not row:
+            return None
+        report = to_report(row, cached=True)
+        degraded = any(result.status != ProviderStatus.SUCCESS for result in report.provider_results)
+        if degraded and degraded_ttl_seconds is not None:
+            created_at = row.created_at
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=UTC)
+            if created_at < datetime.now(UTC) - timedelta(seconds=degraded_ttl_seconds):
+                return None
+        return report
 
     def list(self, limit: int, offset: int) -> list[InvestigationSummary]:
         rows = self.session.scalars(select(Investigation).order_by(

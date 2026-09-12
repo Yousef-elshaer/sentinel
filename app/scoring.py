@@ -29,5 +29,9 @@ def calculate_risk(results: list[ProviderResult]) -> tuple[int, str, list[str]]:
     explanations = [f"+{value}: {reason}" for value, reason in points]
     if not explanations:
         explanations = ["+0: No provider returned a positive malicious signal"]
+    if len(successful) < len(results):
+        explanations.append(
+            f"Limited coverage: {len(successful)}/{len(results)} provider checks succeeded; "
+            "this score does not confirm the indicator is safe."
+        )
     return score, verdict_for(score), explanations
-
