@@ -13,7 +13,7 @@ if st.button("Analyze", type="primary", disabled=not ioc.strip()):
     try:
         response = httpx.post(f"{API}/api/analyze", json={"ioc":ioc}, timeout=30)
         response.raise_for_status(); report=response.json()
-        left,right=st.columns(2); left.metric("Threat score",f"{report['risk_score']}/100"); right.metric("Verdict",report["verdict"])
+        left,right=st.columns(2); left.metric("Threat score", "Unavailable" if report["risk_score"] is None else f"{report['risk_score']}/100"); right.metric("Verdict", "Insufficient data" if report["verdict"] == "UNKNOWN" else report["verdict"])
         st.write("Detected type:",report["ioc_type"]); st.subheader("Why this score?")
         for explanation in report["risk_explanations"]: st.write("•",explanation)
         st.subheader("Provider results")

@@ -49,7 +49,7 @@ class AnalysisReport(BaseModel):
     id: int
     ioc: str
     ioc_type: IOCType
-    risk_score: int
+    risk_score: int | None
     verdict: str
     created_at: datetime
     provider_results: list[ProviderResult]
@@ -62,7 +62,7 @@ class InvestigationSummary(BaseModel):
     id: int
     ioc: str
     ioc_type: IOCType
-    risk_score: int
+    risk_score: int | None
     verdict: str
     created_at: datetime
 
