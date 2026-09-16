@@ -54,6 +54,9 @@ curl -X POST http://localhost:8000/api/analyze \
 | GET | `/api/stats` | Verdict and IOC-type counts |
 | GET | `/health` | API and database readiness |
 
+The health response disables caching so deployment checks always reflect the current process.
+OpenAPI operations are grouped into `analysis` and `operations` tags for faster navigation.
+
 ## Configuration
 
 Copy `.env.example` to `.env`. Add `VIRUSTOTAL_API_KEY`, `ABUSEIPDB_API_KEY`, and
@@ -79,6 +82,8 @@ ruff check .
 ```
 
 The suite covers classification and edge cases, scoring boundaries, database caching, API validation, stored investigations, statistics, CISA normalization, and graceful provider outage handling.
+URL validation also rejects embedded credentials and invalid ports, while normalizing default HTTP
+and HTTPS ports.
 
 ## Docker
 
